@@ -8,72 +8,80 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json()); //automatically parse json into object
 
-app.post('/users', (req, res) => {
+//create/save user data
+app.post('/users', async (req, res) => {
+    //async returns promise but express doesn't matter of return , consider about req,res
     const user = new User(req.body);
-
-    user.save().then(() => {
+    try {
+        await user.save();
         res.status(201).send(user);
-    }).catch((error) => {
-        res.status(400).send(error);
-    });
+    } catch (e) {
+        res.status(400).send(e)
+    }
+    // user.save().then(() => {
+    //     res.status(201).send(user);
+    // }).catch((error) => {
+    //     res.status(400).send(error);
+    // });
 })
 
 //GET USER data
-app.get('/users',(req,res)=>{
-    User.find({}).then((data)=>{
-        res.send(data)
-    }).catch((err)=>{
-        res.status(500).send(err)
-    })
+app.get('/users', async (req, res) => {
+    try {
+        const user = await User.find({})
+        res.send(user);
+    } catch (e) {
+        res.status(500).send(e)
+    }
 })
 
 //FETCH USER data by ID
-app.get('/users/:id',(req,res)=>{    
-    const _id=req.params.id; //to fetch id i.e params from request(url), will use req.params
-    User.findById(_id)
-    .then((user)=>{     
-        res.send(user)
-    }).catch((err)=>{
-          //in case user not found for that particular Id , will send NOT FOUND err msg
-        if(err.name=='CastError'){
+app.get('/users/:id', async (req, res) => {
+    const _id = req.params.id; //to fetch id i.e params from request(url), will use req.params
+    try {
+        const user = await User.findById(_id);
+        if (!user) {
             res.status(404).send('Invalid Id');
         }
-        res.status(500).send(err);
-    })
+        res.send(user)
+    } catch (e) {
+        res.status(500).send(e)
+    }
 })
 
 //creating endpoint for task
-app.post('/tasks',(req,res)=>{
+app.post('/tasks', async (req, res) => {
     const task = new Task(req.body);
-
-    task.save().then(()=>{
-        res.status(201).send(task);
-    }).catch((error)=>{
+    try {
+        await task.save();
+        res.status(201).send(task); //then
+    } catch (e) {
         res.status(400).send(error);
-    })
+    }
 })
 
 //GET task data
-app.get('/tasks',(req,res)=>{
-    Task.find({})
-    .then((task)=>{
-        res.send(task)
-    }).catch((err)=>{
-        res.status(500).send(err)
-    })
+app.get('/tasks', async (req, res) => {
+    const task = await Task.find({})
+    try {
+        res.send(task);
+    } catch (err) {
+        res.status(500).send(err);
+    }
 })
 
 //GET task data by id
-app.get('/tasks/:id',(req,res)=>{
-    const _id= req.params.id;
-    Task.findById(_id).then((task)=>{
-        res.send(task);
-    }).catch((err)=>{
-        if(err.name=='CastError'){
-            res.status(404).send('Id not found');
+app.get('/tasks/:id', async (req, res) => {
+    const _id = req.params.id;
+    try {
+        const task = await Task.findById(_id);
+        if (!task) {
+            res.status(404).send('Invalid Id')
         }
-        res.status(500).send(err);
-    })
+        res.send(task);
+    } catch (e) {
+        res.status(500).send(e);
+    }
 })
 
 app.listen(port, () => {
