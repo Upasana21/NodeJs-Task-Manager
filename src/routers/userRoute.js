@@ -20,6 +20,22 @@ router.post('/users', async (req, res) => {
     // });
 })
 
+//login
+router.post('/users/login', async(req,res)=>{
+    //will find user by their mail id
+    try{
+        //will define/create our customize function 
+        const user = await User.findByCredentials(req.body.email,req.body.password);
+        if(!user){
+            res.status(404).send('')
+        }
+        res.send(user)
+    }catch(error){
+        res.status(400).send(error);
+    }
+})
+
+
 //GET USER data
 router.get('/users', async (req, res) => {
     try {

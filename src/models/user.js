@@ -4,9 +4,9 @@ const bcrypt = require('bcrypt');
 
 //mongoose supports  middleware. Middleware is a way to customize our mongoose model
 //schema act as middleware ---moongose.model('modelName',model/schema)
-// mongoose.Shcmea(modelstructure)
+// new mongoose.Shcmea(modelstructure)
 
-const userSchema = mongoose.Schema({
+const userSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -15,6 +15,7 @@ const userSchema = mongoose.Schema({
     email: {
         type: String,
         required: true,
+        unique:true,//to avoid duplicate of email,it will create index in db
         trim: true,
         lowercase: true,
         validate(value) {
@@ -45,19 +46,33 @@ const userSchema = mongoose.Schema({
     }
 })
 
-//middleware fn save help us to some action before or after save 
-//userSchema.pre('fnName',normalfnForAction) //not arrow fn because it can't bind 'this'
-// this ==> user, this gives access to each user.
+//will create own defined schema fn
+userSchema.statics.findByCredentials = async (email,password)=>{
+    const user = await User.findOne({email});
+    if(!user){
+        throw new Error('Unable to login');
+    }
+    const isPasswordMatch = await bcrypt.compare(password,user.password);
+    if(!isPasswordMatch){
+        throw new Error('Unable to login')
+    }
+    return user;
+} 
+
+/* middleware fn 'save' help us, to do some action before or after save 
+   userSchema.pre('fnName',normalfnForAction) //not arrow fn because it can't bind 'this'
+   this ==> user, this gives access to each user.
+*/
 
 userSchema.pre('save', async function(next){
     const user = this;
-    //check hash not to be performed already hash password
-    console.log('m ',user.isModified('password'))
+    //check hash not to be performed on already hash password
     if(user.isModified('password')){
        user.password = await bcrypt.hash(user.password,8);
     }
 
-    next(); //need to be declared otherwise fn run on loop and never stop
+    next(); //it called to when we are done, 
+    //next need to be declared otherwise fn run hang ,hoping that above code is running/still performing before save
 })
 const User = mongoose.model('User', userSchema);
 
